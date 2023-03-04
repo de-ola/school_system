@@ -24,6 +24,11 @@ class HODUser(models.Model):
     )
     title = models.CharField(max_length=255, choices=title_list, default="Mr.")
     hod_user = models.ForeignKey(User, on_delete=models.CASCADE)
+    address = models.TextField(default="ogbomosho")
+    phone = models.PositiveBigIntegerField(default=8011223344)
+
+    def get_phone_number(self):
+        return "+234" + self.phone
 
     def __str__(self):
         return self.title + " " + self.hod_user.first_name + " " + self.hod_user.last_name
@@ -44,8 +49,21 @@ class StudentUser(models.Model):
     )
     gender = models.CharField(max_length=255, choices=gender_type, default="Male")
     dob = models.DateField()
-    address = models.TextField()
-    phone_number = models.PositiveBigIntegerField()
+    address = models.TextField(default="ogbomosho")
+    phone = models.PositiveBigIntegerField(default=8011223344)
     admission_year = models.DateField()
     department = models.ForeignKey(Department, on_delete=models.DO_NOTHING)
     current_level = models.ForeignKey(Level, on_delete=models.DO_NOTHING)
+
+    def get_phone_number(self):
+        return "+234" + self.phone
+
+class StaffUser(models.Model):
+    staff_user = models.ForeignKey(User, on_delete=models.CASCADE)
+    address = models.TextField(default="ogbomosho")
+    phone = models.PositiveBigIntegerField(default=8011223344)
+    admission_year = models.DateField()
+    department = models.ForeignKey(Department, on_delete=models.DO_NOTHING)
+
+    def get_phone_number(self):
+        return "+234" + self.phone
