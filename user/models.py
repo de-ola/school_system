@@ -11,6 +11,7 @@ class SessionYearModel(models.Model):
     objects = models.Manager()
 
 class User(AbstractUser):
+    email = models.EmailField(unique=True)
     user_type_data = ((1, "HOD"), (2, "Staff"), (3, "Student"))
     user_type = models.CharField(default=1, choices=user_type_data, max_length=10)
 
@@ -29,9 +30,10 @@ class Staffs(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     objects = models.Manager()
 
-class Courses(models.Model):
+class Department(models.Model):
     id = models.AutoField(primary_key=True)
     course_name = models.CharField(max_length=255)
+    hod = models.ForeignKey(AdminHOD, on_delete=models.DO_NOTHING, verbose_name="Head of Department")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     objects = models.Manager()
@@ -42,7 +44,7 @@ class Courses(models.Model):
 class Subjects(models.Model):
     id =models.AutoField(primary_key=True)
     subject_name = models.CharField(max_length=255)
-    course_id = models.ForeignKey(Courses, on_delete=models.CASCADE, default=1)
+    course_id = models.ForeignKey(Department, on_delete=models.CASCADE, default=1)
     staff_id = models.ForeignKey(User, on_delete=models.CASCADE)
     objects = models.Manager()
 
@@ -53,7 +55,7 @@ class Students(models.Model):
     profile_pic = models.FileField(upload_to='students')
     dob = models.DateField(verbose_name="Date of Birth")
     address = models.TextField()
-    course_id = models.ForeignKey(Courses, on_delete=models.DO_NOTHING, default=1)
+    department = models.ForeignKey(Department, on_delete=models.DO_NOTHING, default=1)
     session_year_id = models.ForeignKey(SessionYearModel, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -131,7 +133,7 @@ def create_user_profile(sender, instance, created, **kwargs):
         if instance.user_type == 2:
             Staffs.objects.create(admin=instance)
         if instance.user_type == 3:
-            Students.objects.create(admin=instance, course_id=Courses.objects.get(id=1), session_year_id=SessionYearModel.objects.get(id=1), address="", profile_pic="", gender="")
+            Students.objects.create(admin=instance, course_id=Department.objects.get(id=1), session_year_id=SessionYearModel.objects.get(id=1), address="", profile_pic="", gender="")
     
 
 @receiver(post_save, sender=User)
@@ -143,5 +145,3 @@ def save_user_profile(sender, instance, **kwargs):
     if instance.user_type == 3:
         instance.students.save()
     
-
-
