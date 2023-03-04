@@ -1,147 +1,51 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-
-
-class SessionYearModel(models.Model):
-    id = models.AutoField(primary_key=True)
-    session_start_year = models.DateField()
-    session_end_year = models.DateField()
-    objects = models.Manager()
 
 class User(AbstractUser):
     email = models.EmailField(unique=True)
-    user_type_data = ((1, "HOD"), (2, "Staff"), (3, "Student"))
-    user_type = models.CharField(default=1, choices=user_type_data, max_length=10)
-
-class AdminHOD(models.Model):
-    id = models.AutoField(primary_key=True)
-    admin = models.OneToOneField(User, on_delete = models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    objects = models.Manager()
-
-class Staffs(models.Model):
-    id = models.AutoField(primary_key=True)
-    admin = models.OneToOneField(User, on_delete = models.CASCADE)
-    address = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    objects = models.Manager()
-
-class Department(models.Model):
-    id = models.AutoField(primary_key=True)
-    course_name = models.CharField(max_length=255)
-    hod = models.ForeignKey(AdminHOD, on_delete=models.DO_NOTHING, verbose_name="Head of Department")
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    objects = models.Manager()
+    is_student = models.BooleanField(default=False)
+    is_staff_user = models.BooleanField(default=False)
+    is_hod = models.BooleanField(default=False)
 
     def __str__(self):
-        return self.course_name
+        return self.first_name + " " + self.last_name + " "
 
-class Subjects(models.Model):
-    id =models.AutoField(primary_key=True)
-    subject_name = models.CharField(max_length=255)
-    course_id = models.ForeignKey(Department, on_delete=models.CASCADE, default=1)
-    staff_id = models.ForeignKey(User, on_delete=models.CASCADE)
-    objects = models.Manager()
+class Level(models.Model):
+    level = models.CharField(max_length=2555)
+    school_fees = models.FloatField(default=100000.00)
 
-class Students(models.Model):
-    id = models.AutoField(primary_key=True)
-    admin = models.OneToOneField(User, on_delete = models.CASCADE)
-    gender = models.CharField(max_length=50)
-    profile_pic = models.FileField(upload_to='students')
-    dob = models.DateField(verbose_name="Date of Birth")
+class HODUser(models.Model):
+    title_list = (
+        ("Dr.", "Dr."),
+        ("Dr. Mrs.", "Dr. Mrs."),
+        ("Professor", "Professor"),
+        ("Mr.", "Mr."),
+        ("Mrs.", "Mrs.")
+    )
+    title = models.CharField(max_length=255, choices=title_list, default="Mr.")
+    hod_user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.title + " " + self.hod_user.first_name + " " + self.hod_user.last_name
+
+class Department(models.Model):
+    dept_name = models.CharField(max_length=1000000, blank=True, null=True, verbose_name="Department Name")
+    dept_code = models.CharField(max_length=2550, blank=True, null=True, verbose_name="Department Name")
+    cordinator = models.ForeignKey(HODUser, null=True, blank=True, on_delete=models.SET_NULL)
+
+class StudentUser(models.Model):
+    #student_user_list = User.objects.filter(is_student=True)
+    student_user = models.ForeignKey(User, on_delete=models.CASCADE)
+    profile_pic = models.ImageField(upload_to='students/profile_pics')
+    gender_type =(
+        ("Male", "Male"),
+        ("Female", "Female"),
+        ("Others", "Others"),
+    )
+    gender = models.CharField(max_length=255, choices=gender_type, default="Male")
+    dob = models.DateField()
     address = models.TextField()
-    department = models.ForeignKey(Department, on_delete=models.DO_NOTHING, default=1)
-    session_year_id = models.ForeignKey(SessionYearModel, on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    objects = models.Manager()
-
-    def get_matric_number(self):
-        return str(200000 + int(self.id))
-
-class LeaveReportStaff(models.Model):
-    id = models.AutoField(primary_key=True)
-    staff_id = models.ForeignKey(Staffs, on_delete=models.CASCADE)
-    leave_date = models.CharField(max_length=255)
-    leave_message = models.TextField()
-    leave_status = models.IntegerField(default=0)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    objects = models.Manager()
-
-class FeedBackStudent(models.Model):
-    id = models.AutoField(primary_key=True)
-    student_id = models.ForeignKey(Students, on_delete=models.CASCADE)
-    feedback = models.TextField()
-    feedback_reply = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    objects = models.Manager()
-
-class FeedBackStaffs(models.Model):
-    id = models.AutoField(primary_key=True)
-    staff_id = models.ForeignKey(Staffs, on_delete=models.CASCADE)
-    feedback = models.TextField()
-    feedback_reply = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    objects = models.Manager()
-
-class NotificationStudent(models.Model):
-    id = models.AutoField(primary_key=True)
-    student_id = models.ForeignKey(Students, on_delete=models.CASCADE)
-    message = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    objects = models.Manager()
-
-class NotificationStaffs(models.Model):
-    id = models.AutoField(primary_key=True)
-    stafff_id = models.ForeignKey(Staffs, on_delete=models.CASCADE)
-    message = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    objects = models.Manager()
-
-class StudentResult(models.Model):
-    id = models.AutoField(primary_key=True)
-    student_id = models.ForeignKey(Students, on_delete=models.CASCADE)
-    subject_id = models.ForeignKey(Subjects, on_delete=models.CASCADE)
-    subject_exam_marks = models.FloatField(default=0)
-    subject_assignment_marks = models.FloatField(default=0)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    objects = models.Manager()
-
-
-#Creating Django Signals
-# It's like trigger in database. It will run only when Data is Added in CustomUser model
-
-@receiver(post_save, sender=User)
-# Now Creating a Function which will automatically insert data in HOD, Staff or Student
-def create_user_profile(sender, instance, created, **kwargs):
-    # if Created is true (Means Data Inserted)
-    if created:
-        # Check the user_type and insert the data in respective tables
-        if instance.user_type == 1:
-            AdminHOD.objects.create(admin=instance)
-        if instance.user_type == 2:
-            Staffs.objects.create(admin=instance)
-        if instance.user_type == 3:
-            Students.objects.create(admin=instance, course_id=Department.objects.get(id=1), session_year_id=SessionYearModel.objects.get(id=1), address="", profile_pic="", gender="")
-    
-
-@receiver(post_save, sender=User)
-def save_user_profile(sender, instance, **kwargs):
-    if instance.user_type == 1:
-        instance.adminhod.save()
-    if instance.user_type == 2:
-        instance.staffs.save()
-    if instance.user_type == 3:
-        instance.students.save()
-    
+    phone_number = models.PositiveBigIntegerField()
+    admission_year = models.DateField()
+    department = models.ForeignKey(Department, on_delete=models.DO_NOTHING)
+    current_level = models.ForeignKey(Level, on_delete=models.DO_NOTHING)
