@@ -8,7 +8,7 @@ class User(AbstractUser):
     is_hod = models.BooleanField(default=False)
 
     def __str__(self):
-        return self.first_name + " " + self.last_name + " "
+        return self.username
 
 class Level(models.Model):
     level = models.CharField(max_length=2555)
