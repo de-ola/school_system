@@ -60,10 +60,22 @@ class StudentUser(models.Model):
 
 class StaffUser(models.Model):
     staff_user = models.ForeignKey(User, on_delete=models.CASCADE)
+    profile_pic = models.ImageField(upload_to='staff/profile_pics')
+    title_list = (
+        ("Dr.", "Dr."),
+        ("Dr. Mrs.", "Dr. Mrs."),
+        ("Professor", "Professor"),
+        ("Mr.", "Mr."),
+        ("Mrs.", "Mrs.")
+    )
+    title = models.CharField(max_length=255, choices=title_list, default="Mr.")
     address = models.TextField(default="ogbomosho")
     phone = models.PositiveBigIntegerField(default=8011223344)
-    admission_year = models.DateField()
+    appointment_year = models.DateField(verbose_name="Year of Appointment")
     department = models.ForeignKey(Department, on_delete=models.DO_NOTHING)
 
     def get_phone_number(self):
         return "+234" + self.phone
+    
+    def __str__(self):
+        return self.title + " " + self.staff_user.first_name + " " + self.staff_user.last_name
